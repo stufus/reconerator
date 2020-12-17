@@ -27,7 +27,7 @@ This obtains a number of pieces of information from the host. Be warned that the
 * Favourites (Bookmarks) and extracts the URL from the bookmark. Could be interesting to easily find sharepoint/confluence/wiki/self service payroll etc. (Disk)
 * Mapped drives, including the drive letter, description and remote location (WMI)
 * Installed applications, for all users and for the specific user only (Registry)
-* Teamsites/tenants that OneDrive is configured to synchronise with
+* Teamsites/tenants that OneDrive is configured to synchronise with across all users (Registry)
 
 ### Parameters
 
