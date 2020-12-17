@@ -7,7 +7,8 @@ This is a custom .NET assembly which will perform a number of situational awaren
 * RESOLVEHOST - Performs DNS lookup queries.
 * INDEXSEARCH - Searches the Windows Indexing Service for local files and e-mails (filename and content).
 * PROXYCHECK - Displays the proxy server that will be used when attempting to access a provided URL.
-* PRIVESCCHECK - Identifies privilege escalation vectors.
+
+I had no idea that GhostPack was being developed when I wrote this; we ended up releasing our tools at aroud the same time. The reality is that GhostPack is now far more feature rich. I have actually removed the PrivescCheck function because SharpUp covers its functionality and more.
 
 The key point about this is that it is all implemented in raw .NET - so no powershell.
 
@@ -26,6 +27,7 @@ This obtains a number of pieces of information from the host. Be warned that the
 * Favourites (Bookmarks) and extracts the URL from the bookmark. Could be interesting to easily find sharepoint/confluence/wiki/self service payroll etc. (Disk)
 * Mapped drives, including the drive letter, description and remote location (WMI)
 * Installed applications, for all users and for the specific user only (Registry)
+* Teamsites/tenants that OneDrive is configured to synchronise with
 
 ### Parameters
 
@@ -39,6 +41,7 @@ The verb 'basic' needs to be passed on the command line, followed by the specifi
 | favourites | Displays the URLs stored in the favourites folder (which is basically the user's bookmarks). It currently does not support subfolders; I'll need to fix that. |
 | mappeddrives | Displays the network mapped drives from the user's session. Useful for quickly finding central file shares and home directories. If it is mapped, it probably contains useful data. |
 | installedapplications | Lists the applications that have been installed. This includes applications which have been installed as an admin (on the local machine) AND applications which have been installed by the current user. They are listed in different places in the registry. |
+| onedrive | Displays information around OneDrive (including teamsites/tenants that are synchronised). |
 
 Note that if 'all' is used, a 'proxycheck http://www.google.com' is automatically included. See the proxycheck section for details.
 
@@ -84,7 +87,7 @@ This will show all members of the domain admin or enterprise admin groups on the
 
 ### OpSec
 
-This will generate network traffic to the domain controller that you specify. For the avoidance of doubt, it uses LDAP (as opposed to RPC or similar), and ATA does not seem to pick it up at the moment (as of 15/06/18). 
+This will generate network traffic to the domain controller that you specify. For the avoidance of doubt, it uses LDAP (as opposed to RPC or similar).
 
 ### Limitations (and further work)
 
@@ -191,4 +194,4 @@ Check whether the AlwaysInstallElevated registry key is set only:
 
 # Compiling
 
-Compile this in Visual Studio 2017. It currently uses .NET v4. You can change that in the compilation preferences if you want to.
+Compile this in Visual Studio 2019. It currently targets .NET v4. You can change that in the compilation preferences if you want to.
