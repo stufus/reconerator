@@ -143,6 +143,13 @@ namespace Reconerator
                 b.GetMappedDrives();
             }
 
+            // OneDrive
+            if (showall == true || String.Compare(req, "onedrive", ignoreCase: true) == 0)
+            {
+                Console.Out.WriteLine("\r\n=========== ONEDRIVE ===========");
+                b.GetOneDriveInformation();
+            }
+
             // Installed Applications
             if (showall == true || String.Compare(req, "installedapplications", ignoreCase: true) == 0)
             {
@@ -158,6 +165,7 @@ namespace Reconerator
             try
             {
 #endif
+
                 if (args == null || args.Length < 2)
                 {
                     string[] fakeargs = { "basic", "all" };
@@ -184,7 +192,7 @@ namespace Reconerator
 
                     else if (String.Compare(args[0], "privesccheck", ignoreCase: true) == 0)
                         doPrivescCheck(args);
-                }
+            }
 #if !DEBUG
         }
 

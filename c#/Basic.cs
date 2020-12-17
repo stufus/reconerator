@@ -200,6 +200,87 @@ namespace Reconerator
             
         }
 
+        private string GetReg(RegistryKey k, string v)
+        {
+            return (k.GetValue(v) != null) ? k.GetValue(v).ToString() : "";
+        }
+        public void GetOneDriveInformation()
+        {
+
+            // Get a list of the individual IDs to cross reference later
+            StringBuilder final = new StringBuilder();            
+
+            RegistryKey rk = Registry.Users;
+            foreach (string uid in rk.GetSubKeyNames())
+            {
+                StringBuilder sb = new StringBuilder();
+
+                IDictionary<string, Dictionary<string, string>> providerlist = new Dictionary<string, Dictionary<string, string>>();
+                string syncengines = @"Software\\SyncEngines\Providers\OneDrive";
+                RegistryKey registryKey = Registry.Users.OpenSubKey(uid + "\\" + syncengines);
+                if (registryKey != null)
+                { // This key exists
+                    foreach (string rname in registryKey.GetSubKeyNames())
+                    {
+                        RegistryKey sync = registryKey.OpenSubKey(rname);
+                        if (sync != null)
+                        {
+                            IDictionary<string, string> provider = new Dictionary<string, string>();
+                            foreach (string x in new List<string> {"LibraryType","LastModifiedTime","MountPoint","UrlNamespace"}) {
+                                provider[x] = GetReg(sync, x);
+                            }
+                            providerlist[rname] = (Dictionary<string, string>) provider;
+                        }
+                    }
+
+                }
+
+                string basekey = "Software\\Microsoft\\OneDrive\\Accounts";
+                registryKey = Registry.Users.OpenSubKey(uid + "\\" + basekey);
+                if (registryKey != null)
+                { // This key exists
+                    foreach (string rname in registryKey.GetSubKeyNames())
+                    {
+                        RegistryKey accounts = registryKey.OpenSubKey(rname);
+                        if (accounts != null)
+                        {
+                            if (GetReg(accounts, "ServiceEndpointUri") == "") { continue; }
+                            sb.AppendLine("[" + uid + "]");
+                            sb.AppendFormat("\r\n---- {0} ({1}) ----\r\n\r\n", rname, GetReg(accounts, "DisplayName"));
+                            try
+                            {
+
+                                foreach (string x in new List<string> { "Business", "ServiceEndpointUri", "SPOResourceId", "UserEmail", "UserFolder", "UserName" })
+                                {
+                                    sb.AppendLine(String.Format("{0,19}: {1}", x, GetReg(accounts, x)));
+                                }
+
+                                RegistryKey pc = accounts.OpenSubKey("ScopeIdToMountPointPathCache");
+                                if (pc != null)
+                                {
+                                    foreach (string vname in pc.GetValueNames())
+                                    {
+                                        sb.AppendLine("");
+                                        Dictionary<string, string> relevant = providerlist[vname];
+                                        foreach (string x in new List<string> { "LibraryType", "LastModifiedTime", "MountPoint", "UrlNamespace" })
+                                        {
+                                            sb.AppendLine(String.Format(" | {0,16}: {1}", x, relevant[x]));
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                }
+
+                final.AppendLine(sb.ToString());
+            }
+
+            Console.WriteLine(final.ToString());
+            }
+
         public void GetInstalledApplications()
         {
 
@@ -306,37 +387,6 @@ namespace Reconerator
                 {
                     Console.Out.WriteLine("Exception: " + e.Message);
                 }
-
-
-                string strTarget = "1.2.3.4";
-                CREDENTIAL cred;
-                IntPtr credPtr;
-
-                if (CredRead(strTarget, CRED_TYPE.GENERIC, 0, out credPtr))
-                {
-                    // Get the Credential from the mem location
-                    cred = (CREDENTIAL)Marshal.PtrToStructure(credPtr, typeof(CREDENTIAL));
-
-                    // Get the password
-                    byte[] passwordBytes = new byte[cred.credentialBlobSize];
-
-                    // Copy the memory from the blob to our array
-                    Marshal.Copy(cred.credentialBlob, passwordBytes, 0, cred.credentialBlobSize);
-
-                    // Convert to text
-                    string passwordText = Encoding.Unicode.GetString(passwordBytes);
-                    Console.Out.WriteLine(passwordText);
-                }
-
-                // Clean up
-                if (!credPtr.Equals(IntPtr.Zero))
-                {
-                    Marshal.DestroyStructure(credPtr, typeof(CREDENTIAL));
-                    credPtr = IntPtr.Zero;
-                }      
-
-
-
 
                 Console.Out.WriteLine("\r\n---- Terminal Services History ----");
                 string basekey = "Software\\Microsoft\\Terminal Server Client\\Servers";
