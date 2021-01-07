@@ -244,32 +244,53 @@ namespace Reconerator
                         RegistryKey accounts = registryKey.OpenSubKey(rname);
                         if (accounts != null)
                         {
-                            if (GetReg(accounts, "ServiceEndpointUri") == "") { continue; }
-                            sb.AppendLine("[" + uid + "]");
+                            Boolean IsPersonal = false; 
+                            sb.AppendLine("\r\n[" + uid + "]");
                             sb.AppendFormat("\r\n---- {0} ({1}) ----\r\n\r\n", rname, GetReg(accounts, "DisplayName"));
                             try
                             {
 
                                 foreach (string x in new List<string> { "Business", "ServiceEndpointUri", "SPOResourceId", "UserEmail", "UserFolder", "UserName" })
                                 {
-                                    sb.AppendLine(String.Format("{0,19}: {1}", x, GetReg(accounts, x)));
+                                    string result = GetReg(accounts, x).Trim();
+                                    sb.AppendLine(String.Format("{0,19}: {1}", x, result));
+                                    IsPersonal = (x == "Business" && result == "1") ? false : true;
                                 }
 
                                 RegistryKey pc = accounts.OpenSubKey("ScopeIdToMountPointPathCache");
-                                if (pc != null)
+                                string[] scopeids;
+                                if (IsPersonal == false)
+                                    scopeids = pc.GetValueNames();
+                                else {
+                                    List<string> list = new List<string>();
+                                    list.Add("Personal");
+                                    scopeids = list.ToArray();
+                                }
+
+                                if (pc != null || scopeids.Length > 0)
                                 {
-                                    foreach (string vname in pc.GetValueNames())
+                                    foreach (string vname in scopeids)
                                     {
                                         sb.AppendLine("");
                                         Dictionary<string, string> relevant = providerlist[vname];
                                         foreach (string x in new List<string> { "LibraryType", "LastModifiedTime", "MountPoint", "UrlNamespace" })
                                         {
-                                            sb.AppendLine(String.Format(" | {0,16}: {1}", x, relevant[x]));
+                                            if (x == "LastModifiedTime")
+                                            {
+                                                DateTime parsedDate;
+                                                DateTime.TryParse(relevant[x], out parsedDate);
+                                                string formattedDate = parsedDate.ToString("ddd dd MMM yyyy HH:mm:ss");
+                                                sb.AppendLine(String.Format(" | {0,16}: {1} [{2}]", x, relevant[x], formattedDate));
+                                            } else {
+                                                sb.AppendLine(String.Format(" | {0,16}: {1}", x, relevant[x]));
+                                            }
                                         }
                                     }
                                 }
                             }
-                            catch { }
+                            catch (Exception e) {
+                                sb.AppendLine(String.Format("Exception: {0}", e.Message));
+                            }
                         }
                     }
 

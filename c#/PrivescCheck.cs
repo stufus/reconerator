@@ -26,7 +26,7 @@ namespace Reconerator
 
             foreach (ManagementObject o in searcher.Get())
             {
-                if (o != null && o["PathName"] != null && o["PathName"] != "") {
+                if (o != null && o["PathName"] != null && (string) o["PathName"] != "") {
                     string pathname = o["PathName"].ToString();
                     
                     if (Regex.IsMatch(pathname, "^[^\"].+?\\s.+?\\.exe", RegexOptions.IgnoreCase))
