@@ -8,7 +8,7 @@ This is a custom .NET assembly which will perform a number of situational awaren
 * INDEXSEARCH - Searches the Windows Indexing Service for local files and e-mails (filename and content).
 * PROXYCHECK - Displays the proxy server that will be used when attempting to access a provided URL.
 
-I had no idea that GhostPack was being developed when I wrote this; we ended up releasing our tools at aroud the same time. The reality is that GhostPack is now far more feature rich. I have actually removed the PrivescCheck function because SharpUp covers its functionality and more.
+I had no idea that GhostPack was being developed when I wrote this; we ended up releasing our tools at aroud the same time. The reality is that GhostPack is now far more feature rich. I am removing the PrivescCheck function because SharpUp covers all its functionality and more.
 
 The key point about this is that it is all implemented in raw .NET - so no powershell.
 
