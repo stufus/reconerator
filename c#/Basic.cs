@@ -208,15 +208,16 @@ namespace Reconerator
         {
 
             // Get a list of the individual IDs to cross reference later
-            StringBuilder final = new StringBuilder();            
+            StringBuilder final = new StringBuilder();                       
 
             RegistryKey rk = Registry.Users;
             foreach (string uid in rk.GetSubKeyNames())
             {
                 StringBuilder sb = new StringBuilder();
+                List<string> usedScopeIDs = new List<string>();
 
                 IDictionary<string, Dictionary<string, string>> providerlist = new Dictionary<string, Dictionary<string, string>>();
-                string syncengines = @"Software\\SyncEngines\Providers\OneDrive";
+                string syncengines = @"Software\SyncEngines\Providers\OneDrive";
                 RegistryKey registryKey = Registry.Users.OpenSubKey(uid + "\\" + syncengines);
                 if (registryKey != null)
                 { // This key exists
@@ -233,7 +234,12 @@ namespace Reconerator
                         }
                     }
 
+                } else
+                {
+                    continue; // If the key doesn't exist, don't wait around
                 }
+
+                sb.AppendLine("\r\n[" + uid + "]");
 
                 string basekey = "Software\\Microsoft\\OneDrive\\Accounts";
                 registryKey = Registry.Users.OpenSubKey(uid + "\\" + basekey);
@@ -245,7 +251,6 @@ namespace Reconerator
                         if (accounts != null)
                         {
                             Boolean IsPersonal = false; 
-                            sb.AppendLine("\r\n[" + uid + "]");
                             sb.AppendFormat("\r\n---- {0} ({1}) ----\r\n\r\n", rname, GetReg(accounts, "DisplayName"));
                             try
                             {
@@ -254,23 +259,30 @@ namespace Reconerator
                                 {
                                     string result = GetReg(accounts, x).Trim();
                                     sb.AppendLine(String.Format("{0,19}: {1}", x, result));
-                                    IsPersonal = (x == "Business" && result == "1") ? false : true;
+                                    if (x == "Business")
+                                    {
+                                        IsPersonal = (result == "1") ? false : true;
+                                    }
                                 }
 
                                 RegistryKey pc = accounts.OpenSubKey("ScopeIdToMountPointPathCache");
                                 string[] scopeids;
                                 if (IsPersonal == false)
                                     scopeids = pc.GetValueNames();
-                                else {
+                                else
+                                {
                                     List<string> list = new List<string>();
                                     list.Add("Personal");
                                     scopeids = list.ToArray();
                                 }
+                                usedScopeIDs.AddRange(scopeids);
 
                                 if (pc != null || scopeids.Length > 0)
                                 {
                                     foreach (string vname in scopeids)
                                     {
+                                        if (!providerlist.ContainsKey(vname))
+                                            continue;
                                         sb.AppendLine("");
                                         Dictionary<string, string> relevant = providerlist[vname];
                                         foreach (string x in new List<string> { "LibraryType", "LastModifiedTime", "MountPoint", "UrlNamespace" })
@@ -281,19 +293,48 @@ namespace Reconerator
                                                 DateTime.TryParse(relevant[x], out parsedDate);
                                                 string formattedDate = parsedDate.ToString("ddd dd MMM yyyy HH:mm:ss");
                                                 sb.AppendLine(String.Format(" | {0,16}: {1} [{2}]", x, relevant[x], formattedDate));
-                                            } else {
+                                            }
+                                            else
+                                            {
                                                 sb.AppendLine(String.Format(" | {0,16}: {1}", x, relevant[x]));
                                             }
                                         }
                                     }
                                 }
                             }
-                            catch (Exception e) {
+
+                            catch (Exception e)
+                            {
                                 sb.AppendLine(String.Format("Exception: {0}", e.Message));
                             }
                         }
                     }
 
+                }
+
+                // Now check for any unused scopeids
+                sb.AppendLine("\r\n\r\n---- Orphaned ----");
+                foreach (string allscopes in new List<string>(providerlist.Keys))
+                {
+                    if (!usedScopeIDs.Contains(allscopes) && providerlist.ContainsKey(allscopes))
+                    {
+                        sb.AppendLine("");
+                        Dictionary<string, string> relevant = providerlist[allscopes];
+                        foreach (string x in new List<string> { "LibraryType", "LastModifiedTime", "MountPoint", "UrlNamespace" })
+                        {
+                            if (x == "LastModifiedTime")
+                            {
+                                DateTime parsedDate;
+                                DateTime.TryParse(relevant[x], out parsedDate);
+                                string formattedDate = parsedDate.ToString("ddd dd MMM yyyy HH:mm:ss");
+                                sb.AppendLine(String.Format(" {0,16}: {1} [{2}]", x, relevant[x], formattedDate));
+                            }
+                            else
+                            {
+                                sb.AppendLine(String.Format(" {0,16}: {1}", x, relevant[x]));
+                            }
+                        }
+                    }
                 }
 
                 final.AppendLine(sb.ToString());
